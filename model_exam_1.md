@@ -11,13 +11,10 @@ You are onboarding logs from multiple applications where fields may vary dynamic
 - Create an index `app-logs-000001` with:
   - `@timestamp` as `date`
   - `service.name` as `keyword`
-
 - Any new string field under `labels.*` must:
   - Be mapped as `keyword`
-
 - Any other string field should:
   - Be mapped as `text` with a `keyword` sub-field
-
 - Disable indexing for any field under `debug.*`
 
 **Task:**
@@ -94,7 +91,6 @@ You are storing time-series metrics data.
   - Hot phase: rollover after 50GB or 1 day
   - Warm phase: shrink to 1 shard and force merge to 1 segment
   - Delete phase: after 30 days
-
 - Ensure the template:
   - Applies to `metrics-system*`
   - Uses the ILM policy
@@ -180,7 +176,7 @@ PUT _index_template/metrics-system-custom-template
 ```
 
 ```jsx
-POST metrics-system/_doc{  "@timestamp": "2026-02-02",  "name": "Biplab",  "salary": 231231}
+POST metrics-system/_doc{  "@timestamp": "2026-02-02",  "name": "Biplab",  "salary": 231231}
 ```
 
 </details>
@@ -197,14 +193,11 @@ Write a query that:
 
 - Searches for products where:
   - `name` contains “laptop” OR “notebook”
-
 - Filters:
   - `price` between 800 and 2000
   - `availability` is `in_stock`
-
 - Must NOT include:
   - Products with `brand` = "BrandX"
-
 - Boost products where:
   - `rating` >= 4.5
 
@@ -292,7 +285,6 @@ You are analyzing logs in `web-logs`.
 - For each status code:
   - Calculate average `response_time`
   - Find top 3 `url.path` values (by count)
-
 - Only include logs from the last 24 hours
 
 **Task:**
@@ -344,6 +336,22 @@ GET web-logs/_search
 ---
 
 ## **Question 5 — Runtime Fields + Search (Searching Data)**
+
+Index `orders` contains:
+
+- `price` (double)
+- `quantity` (integer)
+
+**Requirements:**
+
+- Define a runtime field `total_price = price * quantity`
+- Query:
+  - Return orders where `total_price > 500`
+- Sort results by `total_price` descending
+
+**Task:**
+
+Write the search request using runtime fields.
 
 <details>
 <summary><strong>Answer</strong></summary>
@@ -400,60 +408,88 @@ GET orders/_search
 
 ## **Question 6 — Pagination + Sorting + Aliases (Developing Search Applications)**
 
-### 1. Create the alias
+You have an index `articles-v1` and plan to migrate to `articles-v2`.
 
-<details>
-<summary><strong>Answer</strong></summary>
+**Requirements:**
 
-```
-PUT articles-v1/
-{
-  "aliases": {
-    "articles-current": {
-      "is_write_index": true
-    }
-  }
-}
-```
+- Create an alias `articles-current` pointing to `articles-v1`
+- Query:
+  - Search for "Elasticsearch"
+  - Sort by `publish_date` descending, then `_score`
+- Implement pagination:
+  - Return page 3 with 20 results per page
 
-</details>
+**Task:**
 
-### 2. Paginated search query
+1. Create the alias
 
-<details>
-<summary><strong>Answer</strong></summary>
+      <details>
+   <summary><strong>Answer</strong></summary>
 
-```
-GET articles-current/_search
-{
-  "query": {
-    "multi_match": {
-      "query": "Elasticsearch",
-      "fields": ["title", "author"]
-    }
-  },
-  "sort": [
-    {
-      "publish_date": {
-        "order": "desc"
-      }
-    },
-    {
-      "_score": {
-        "order": "desc"
-      }
-    }
-  ],
-  "from": 40,
-  "size": 20
-}
-```
+   ```
+   PUT articles-v1/
+   {
+     "aliases": {
+       "articles-current": {
+         "is_write_index": true
+       }
+     }
+   }
+   ```
+
+   </details>
+
+2. Write the paginated search query
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   GET articles-current/_search
+   {
+     "query": {
+       "multi_match": {
+         "query": "Elasticsearch",
+         "fields": ["title", "author"]
+       }
+     },
+     "sort": [
+       {
+         "publish_date": {
+           "order": "desc"
+         }
+       },
+       {
+         "_score": {
+           "order": "desc"
+         }
+       }
+     ],
+     "from": 40,
+     "size": 20
+   }
+   ```
 
 </details>
 
 ---
 
 ## **Question 7 — Reindex + Update By Query (Data Processing)**
+
+You have an index `users-old` with inconsistent data.
+
+**Requirements:**
+
+- Reindex data into `users-new`
+- During reindex:
+  - Rename field `fullname` → `name`
+- After reindex:
+  - Update all documents where `status = inactive` to set `archived = true`
+
+**Task:**
+
+1. Reindex request with transformation
+2. Update By Query request
 
 <details>
 <summary><strong>Answer</strong></summary>
@@ -496,51 +532,67 @@ POST users-new/_update_by_query
 
 ## **Question 8 — Ingest Pipeline + Multi-fields (Data Processing)**
 
-### 1. Ingest pipeline
+Incoming documents contain:
 
-<details>
-<summary><strong>Answer</strong></summary>
+- `message` (text log line)
+- `user_agent` (string)
 
-```
-PUT _ingest/pipeline/test-ingest-pipeline
-{
-  "processors": [
-    {
-      "grok": {
-        "field": "message",
-        "patterns": [
-          "%{IP:source_ip} %{WORD:action}"
-        ]
-      }
-    },
-    {
-      "user_agent": {
-        "field": "user_agent"
-      }
-    }
-  ]
-}
-```
+**Requirements:**
 
-</details>
+- Create an ingest pipeline:
+  - Extract `ip` and `action` from `message` using grok
+  - Parse `user_agent` into structured fields
+- Mapping:
+  - `user_agent.original` as `text`
+  - `user_agent.original.keyword` as `keyword`
 
-### 2. Mapping
+**Task:**
 
-<details>
-<summary><strong>Answer</strong></summary>
+1. Define the ingest pipeline
 
-```
-PUT test-index/
-{
-  "mappings": {
-    "properties": {
-      "source_ip": {
-        "type": "ip"
-      },
-      "action": {
-        "type": "keyword"
-      },
-      "user_agent": {
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   PUT _ingest/pipeline/test-ingest-pipeline
+   {
+     "processors": [
+       {
+         "grok": {
+           "field": "message",
+           "patterns": [
+             "%{IP:source_ip} %{WORD:action}"
+           ]
+         }
+       },
+       {
+         "user_agent": {
+           "field": "user_agent"
+         }
+       }
+     ]
+   }
+   ```
+
+   </details>
+
+2. Define the mapping supporting multi-fields
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   PUT test-index/
+   {
+     "mappings": {
+       "properties": {
+         "source_ip": {
+           "type": "ip"
+         },
+         "action": {
+           "type": "keyword"
+         },
+         "user_agent": {
    	      "properties": {
    		        "type": "text",
    		        "fields": {
@@ -552,7 +604,8 @@ PUT test-index/
          }
        }
      }
-```
+   }
+   ```
 
 </details>
 
@@ -560,57 +613,76 @@ PUT test-index/
 
 ## **Question 9 — Cluster Health + Snapshot Restore (Cluster Management)**
 
-### 1. Diagnose
+A cluster is in **yellow** state due to unassigned replica shards.
 
-<details>
-<summary><strong>Answer</strong></summary>
+**Requirements:**
 
-```
-GET _cluster/health
-GET _cat/indices?v&health=yellow
+- Identify the cause of unassigned shards
+- Fix the issue so cluster becomes green
+- Restore a snapshot:
+  - Snapshot repository: `backup-repo`
+  - Snapshot name: `snapshot_01`
+  - Restore only index `orders`
 
-GET _cat/shards/test-index?v
+**Task:**
 
-GET _cluster/allocation/explain
-{
-  "index": "test-index",
-  "shard": 0,
-  "primary": false
-}
+Provide:
 
-GET test-index/_settings
-```
+1. Commands to diagnose shard allocation
 
-</details>
+      <details>
+   <summary><strong>Answer</strong></summary>
 
-### 2. Fix allocation
+   Not complete but different commands to view cluster health, index, shard health and settings.
 
-<details>
-<summary><strong>Answer</strong></summary>
+   ```
+   GET _cluster/health
+   GET _cat/indices?v&health=yellow
 
-```
-PUT test-index/_settings
-{
-  "number_of_replicas": 1
-}
-```
+   GET _cat/shards/test-index?v
 
-</details>
+   GET _cluster/allocation/explain
+   {
+     "index": "test-index",
+     "shard": 0,
+     "primary": false
+   }
 
-### 3. Restore
+   GET test-index/_settings
+   ```
 
-<details>
-<summary><strong>Answer</strong></summary>
+   </details>
 
-```
-GET _snapshot/backup-repo/*?verbose=false
-POST orders/_close
-POST _snapshot/backup-repo/snaphost_01/_restore
-{
-  "indices": "orders",
-  "include_aliases": false
-}
-```
+2. Steps/commands to fix allocation
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   PUT test-index/_settings
+   {
+     "number_of_replicas": 1
+   }
+   ```
+
+   </details>
+
+3. Restore request
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   GET _snapshot/backup-repo/*?verbose=false
+   POST orders/_close
+   POST _snapshot/backup-repo/snaphost_01/_restore
+   {
+     "indices": "orders",
+     "include_aliases": false
+   }
+   ```
+
+   </details>
 
 </details>
 
@@ -618,91 +690,111 @@ POST _snapshot/backup-repo/snaphost_01/_restore
 
 ## **Question 10 — Cross-Cluster Search + Replication + SLM (Cluster Management)**
 
-### 1. Remote cluster config
+You have two clusters:
 
-<details>
-<summary><strong>Answer</strong></summary>
+- `cluster_a` (local)
+- `cluster_b` (remote)
 
-```
-PUT _cluster/settings
-{
-  "persistent": {
-    "cluster": {
-      "remote": {
-        "cluster_b": {
-          "skip_unavailable": false,
-          "mode": "sniff",
-          "proxy_address": null,
-          "proxy_socket_connections": null,
-          "server_name": null,
-          "seeds": [
-            "10.100.22.200:9200"
-          ],
-          "node_connections": 3
-        }
-      }
-    }
-  }
-}
-```
+**Requirements:**
+
+- Configure `cluster_b` as a remote cluster
+- Perform a search from `cluster_a` on index `logs` in `cluster_b`
+- Set up cross-cluster replication:
+  - Follow index `logs` from `cluster_b`
+- Configure Snapshot Lifecycle Management:
+  - Daily snapshots at 2 AM
+  - Retain last 7 snapshots
+
+**Task:**
+
+Write requests for:
+
+1. Remote cluster configuration
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   PUT _cluster/settings
+   {
+     "persistent": {
+       "cluster": {
+         "remote": {
+           "cluster_b": {
+             "skip_unavailable": false,
+             "mode": "sniff",
+             "proxy_address": null,
+             "proxy_socket_connections": null,
+             "server_name": null,
+             "seeds": [
+               "10.100.22.200:9200"
+             ],
+             "node_connections": 3
+           }
+         }
+       }
+     }
+   }
+   ```
+
+   </details>
+
+2. Cross-cluster search query
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   GET /cluster_b:logs/_search
+   {
+     "size": 1,
+     "query": {
+       "match": {
+         "user.id": "kimchy"
+       }
+     },
+     "_source": ["user.id", "message", "http.response.status_code"]
+   }
+   ```
+
+   </details>
+
+3. CCR setup
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   In Kibana
+   Stack Management >> Cross Cluster Replication >> Choose follower indices tab >> Create a follower Index.
+
+   Choose leader index “logs” from cluster b.
+
+   Enter the name of follower index “follower-logs” in cluster a.
+   </details>
+
+4. SLM policy
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   PUT _slm/policy/nightly-snapshots
+   {
+     "schedule": "0 0 2 * * ?",
+     "name": "<daily-snap-{now/d}>",
+     "repository": "backup-repo",
+     "config": {
+       "indices": "*",
+       "include_global_state": true
+     },
+     "retention": {
+       "expire_after": "7d",
+       "min_count": 1,
+       "max_count": 7
+     }
+   }
+   ```
 
 </details>
 
-### 2. Cross-cluster search
-
-<details>
-<summary><strong>Answer</strong></summary>
-
-```
-GET /cluster_b:logs/_search
-{
-  "size": 1,
-  "query": {
-    "match": {
-      "user.id": "kimchy"
-    }
-  },
-  "_source": ["user.id", "message", "http.response.status_code"]
-}
-```
-
-</details>
-
-### 3. CCR setup
-
-<details>
-<summary><strong>Answer</strong></summary>
-
-In Kibana
-Stack Management >> Cross Cluster Replication >> Choose follower indices tab >> Create a follower Index.
-
-Choose leader index “logs” from cluster b.
-
-Enter the name of follower index “follower-logs” in cluster a.
-
-</details>
-
-### 4. SLM policy
-
-<details>
-<summary><strong>Answer</strong></summary>
-
-```
-PUT _slm/policy/nightly-snapshots
-{
-  "schedule": "0 0 2 * * ?",
-  "name": "<daily-snap-{now/d}>",
-  "repository": "backup-repo",
-  "config": {
-    "indices": "*",
-    "include_global_state": true
-  },
-  "retention": {
-    "expire_after": "7d",
-    "min_count": 1,
-    "max_count": 7
-  }
-}
-```
-
-</details>
+---

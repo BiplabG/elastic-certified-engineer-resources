@@ -10,14 +10,12 @@ You are standardizing index creation across teams.
   - Defines:
     - `@timestamp` as `date`
     - `env` as `keyword`
-
 - Create an **index template**:
   - Applies to `logs-*`
   - Uses the component template
   - Sets:
     - `number_of_shards = 1`
     - `number_of_replicas = 1`
-
 - Ensure new indices automatically use these mappings and settings
 
 **Task:**
@@ -77,10 +75,8 @@ You are ingesting JSON documents with unknown fields.
 
 - Any field ending with `_id`:
   - Must be mapped as `keyword`
-
 - Any numeric field under `metrics.*`:
   - Must be mapped as `float`
-
 - Any field under `metadata.*`:
   - Must NOT be indexed
 
@@ -144,10 +140,8 @@ Index `products` contains:
 - Boost:
   - `title` 3x
   - `description` 1x
-
 - Only include documents where:
   - `category` is `electronics`
-
 - Sort by `_score` descending
 
 **Task:** Write the query.
@@ -219,7 +213,6 @@ You are analyzing sales data in `sales`.
 - Aggregate total revenue per `month`
 - Calculate:
   - Month-over-month revenue change (difference)
-
 - Only include last 6 months
 
 **Task:**
@@ -265,6 +258,22 @@ GET sales/_search
 
 ## **Question 15 — Async Search + Runtime Field (Searching Data)**
 
+Index `transactions` contains:
+
+- `amount`
+- `tax`
+
+**Requirements:**
+
+- Define runtime field:
+  - `total = amount + tax`
+- Perform an **asynchronous search**:
+  - Return documents where `total > 1000`
+
+**Task:**
+
+Write the async search request.
+
 <details>
 <summary><strong>Answer</strong></summary>
 
@@ -298,6 +307,21 @@ POST transactions/_async_search?wait_for_completion_timeout=1s
 
 ## **Question 16 — Search After + Deep Pagination (Developing Search Applications)**
 
+Index `logs` contains millions of documents.
+
+**Requirements:**
+
+- Retrieve results sorted by:
+  - `@timestamp` ascending
+- Implement deep pagination using `search_after`
+- Return next page after:
+  - `@timestamp = 2026-01-01T00:00:00`
+  - `_id = "abc123"`
+
+**Task:**
+
+Write the search request.
+
 <details>
 <summary><strong>Answer</strong></summary>
 
@@ -328,6 +352,21 @@ GET logs/_search
 ---
 
 ## **Question 17 — Index Aliases with Write Index (Developing Search Applications)**
+
+You are implementing zero-downtime reindexing.
+
+**Requirements:**
+
+- Alias: `orders`
+- Current index: `orders-v1`
+- New index: `orders-v2`
+- After migration:
+  - Writes go to `orders-v2`
+  - Reads go to both indices
+
+**Task:**
+
+Update aliases to reflect this setup.
 
 <details>
 <summary><strong>Answer</strong></summary>
@@ -381,6 +420,23 @@ POST _aliases
 
 ## **Question 18 — Ingest Pipeline with Conditional Logic (Data Processing)**
 
+Incoming logs contain:
+
+- `status_code`
+- `message`
+
+**Requirements:**
+
+- If `status_code >= 500`:
+  - Add field `severity = "error"`
+- Otherwise:
+  - Add field `severity = "info"`
+- Remove field `message` after processing
+
+**Task:**
+
+Define the ingest pipeline.
+
 <details>
 <summary><strong>Answer</strong></summary>
 
@@ -409,6 +465,22 @@ PUT _ingest/pipeline/my-custom-ingest-pipeline
 
 ## **Question 19 — Update By Query with Script Logic (Data Processing)**
 
+Index `employees` contains:
+
+- `salary`
+- `bonus`
+
+**Requirements:**
+
+- For all documents:
+  - Add field `total_compensation = salary + bonus`
+- Only update documents where:
+  - `bonus` exists
+
+**Task:**
+
+Write the update by query request.
+
 <details>
 <summary><strong>Answer</strong></summary>
 
@@ -433,72 +505,81 @@ POST employees/_update_by_query
 
 ## **Question 20 — Cross-Cluster + Searchable Snapshot (Cluster Management)**
 
-### 1. Remote cluster configuration
+You have:
 
-<details>
-<summary><strong>Answer</strong></summary>
+- Remote cluster: `archive_cluster`
+- Snapshot repository: `cold-repo`
 
-```
-PUT _cluster/settings
-{
-  "persistent": {
-    "cluster": {
-      "remote": {
-        "archive_cluster": {
-          "skip_unavailable": true,
-          "mode": "sniff",
-          "proxy_address": null,
-          "proxy_socket_connections": null,
-          "server_name": null,
-          "seeds": [
-            "10.22.23.24:9200"
-          ],
-          "node_connections": 3
-        }
-      }
-    }
-  }
-}
-```
+**Requirements:**
+
+- Configure remote cluster
+- Mount a **searchable snapshot**:
+  - Snapshot: `logs-snap-01`
+  - Index: `logs-2025`
+- Perform a search on mounted index from local cluster
+
+**Task:**
+
+Write:
+
+1. Remote cluster configuration
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   PUT _cluster/settings
+   {
+     "persistent": {
+       "cluster": {
+         "remote": {
+           "archive_cluster": {
+             "skip_unavailable": true,
+             "mode": "sniff",
+             "proxy_address": null,
+             "proxy_socket_connections": null,
+             "server_name": null,
+             "seeds": [
+               "10.22.23.24:9200"
+             ],
+             "node_connections": 3
+           }
+         }
+       }
+     }
+   }
+   ```
+
+   </details>
+
+2. Mount searchable snapshot request
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   POST /_snapshot/cold-repo/logs-snap-01/_mount?wait_for_completion=true
+   {
+     "index": "logs-2025",
+     "renamed_index": "mounted-logs-2025",
+     "index_settings": {
+       "index.number_of_replicas": 0
+     },
+     "ignore_index_settings": [ "index.refresh_interval" ]
+   }
+   ```
+
+   </details>
+
+3. Cross-cluster search query
+
+      <details>
+   <summary><strong>Answer</strong></summary>
+
+   ```
+   POST archive_cluster:mounted-logs-2025/_search
+   ```
 
 </details>
-
-### 2. Mount searchable snapshot request
-
-<details>
-<summary><strong>Answer</strong></summary>
-
-```
-POST /_snapshot/cold-repo/logs-snap-01/_mount?wait_for_completion=true
-{
-  "index": "logs-2025",
-  "renamed_index": "mounted-logs-2025",
-  "index_settings": {
-    "index.number_of_replicas": 0
-  },
-  "ignore_index_settings": [ "index.refresh_interval" ]
-}
-```
-
-</details>
-
-### 3. Cross-cluster search query
-
-<details>
-<summary><strong>Answer</strong></summary>
-
-```
-POST archive_cluster:mounted-logs-2025/_search
-```
-
-</details>
-
----
-
-If you want next step, I can:
-
-- Convert both Model 1 & 2 into a **single GitHub-ready README**
-- Add **copy buttons / better formatting for study use**
-- Or turn this into a **practice exam (hide answers toggle globally)**
 
 ---

@@ -1,7 +1,5 @@
 # Model 3: Exam Questions from ChatGPT
 
-</details>
-
 ---
 
 ### **Question 1: Index Design + Dynamic Templates + Multi-fields**
