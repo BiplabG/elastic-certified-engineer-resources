@@ -1,5 +1,7 @@
 # Model 3: Exam Questions from ChatGPT
 
+</details>
+
 ---
 
 ### **Question 1: Index Design + Dynamic Templates + Multi-fields**
@@ -24,7 +26,8 @@ You are designing an index for an e-commerce platform that stores product data w
    - Exact match sorting
 4. Ensure `category` supports efficient aggregations.
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 ```
 PUT e-commerce-index/
@@ -72,6 +75,8 @@ PUT e-commerce-index/
 }
 ```
 
+</details>
+
 ---
 
 ### **Question 2: Index Lifecycle Management + Data Streams**
@@ -95,7 +100,8 @@ You are ingesting time-series logs from an application. Requirements:
      - `message` (text)
 3. Ensure new data automatically flows into the data stream.
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 ```
 PUT _ilm/policy/my-custom-ilm-policy
@@ -187,6 +193,8 @@ POST my-continuous-data-now/_doc
 }
 ```
 
+</details>
+
 ---
 
 ### **Question 3: Complex Search Query + Boolean Logic + Filters**
@@ -213,7 +221,8 @@ Write a query that:
 4. Exclude:
    - Articles tagged with "deprecated"
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 ```
 GET articles/_search
@@ -287,6 +296,8 @@ GET articles/_search
 }
 ```
 
+</details>
+
 ---
 
 ### **Question 4: Aggregations + Sub-aggregations**
@@ -309,7 +320,8 @@ You are analyzing sales data stored in `sales_index` with fields:
 3. For each top product:
    - Calculate average quantity sold
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 ```
 GET sales_index/_search
@@ -361,6 +373,8 @@ GET sales_index/_search
 }
 ```
 
+</details>
+
 ---
 
 ### **Question 5: Runtime Fields + Painless Scripting**
@@ -380,7 +394,8 @@ You have an index `orders` with fields:
    - Filters orders where `total_price > 500`
 3. Sort results by `total_price` descending
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 ```
 GET orders/_search
@@ -410,6 +425,8 @@ GET orders/_search
 }
 ```
 
+</details>
+
 ---
 
 ### **Question 6: Pagination + Sorting + Aliases**
@@ -424,7 +441,8 @@ You manage an index `customers_v1` and plan to migrate to `customers_v2`.
    - Implements pagination (page size = 20, page 3)
 3. Switch the alias to `customers_v2` without downtime
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 ```
 POST _aliases
@@ -478,6 +496,8 @@ POST _aliases
 }
 ```
 
+</details>
+
 ---
 
 ### **Question 7: Ingest Pipeline + Data Processing**
@@ -497,7 +517,8 @@ Incoming documents contain:
 2. Apply the pipeline when indexing documents
 3. Ensure mapping supports efficient querying of new fields
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 ```
 PUT _ingest/pipeline/my-custom-exam-ingest-pipeline
@@ -561,6 +582,8 @@ PUT my-ingesting-index/
 }
 ```
 
+</details>
+
 ---
 
 ### **Question 8: Reindex + Update By Query**
@@ -579,7 +602,8 @@ You have an index `products_old` with:
 3. Use **Update By Query API** to:
    - Normalize `category` to lowercase in the new index
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 ```
 PUT products_new/
@@ -624,6 +648,8 @@ PUT _ingest/pipeline/lowercase-custom
 POST products_new/_update_by_query?pipeline=lowercase-custom
 ```
 
+</details>
+
 ---
 
 ### **Question 9: Cross-Cluster Search + Asynchronous Search**
@@ -644,7 +670,8 @@ Both contain an index `logs`.
 3. Execute the search as an **asynchronous search**
 4. Retrieve partial results before completion
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 ```
 PUT _cluster/settings
@@ -685,6 +712,8 @@ GET /_async_search/FlZ3R2dPczVfVFNxOHpkZlJHTHFkakEeREVGZ2JTQ0tUUWViWVgyN0R6LXUtQ
       return_intermediate_results=true
 ```
 
+</details>
+
 ---
 
 ### **Question 10: Cluster Management + Snapshots + Shard Issues**
@@ -701,7 +730,8 @@ A cluster is in **yellow/red state** due to shard allocation issues.
 5. Restore a specific index from snapshot
 6. Make the snapshot **searchable without full restore**
 
-#### Answer
+<details>
+<summary><strong>Answer</strong></summary>
 
 GET \_cluster/health
 
@@ -776,5 +806,7 @@ POST /_snapshot/my_repository/my_snapshot/_mount?wait_for_completion=true
   ]
 }
 ```
+
+</details>
 
 ---
